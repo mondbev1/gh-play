@@ -1,0 +1,76 @@
+name: Service test
+on:
+  workflow_dispatch:
+    inputs:    
+      release-tag:
+        description: Release tag
+     #   required: true
+  push:
+    #branches-ignore:
+    branches:
+      - "**"
+    tags:
+      - "**"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          #repository: $GITHUB_REPOSITORY
+          path: ${{ env.git_repo_name }}
+          fetch-depth: 0
+      - name: Set Repo Envs
+        run: |
+          REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
+          echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+          echo "node_version=14.x" | tee -a $GITHUB_ENV
+          echo "mongodb_version=4.0" | tee -a $GITHUB_ENV
+
+      # Prep the correct tag for push
+      - name: prep
+        id: prep
+        run: |
+          git -C ${{ env.git_repo_name }} config user.name "GitHub Actions Bot"
+          git -C ${{ env.git_repo_name }} config user.email "<>"
+          t=$(git -C ${{ env.git_repo_name }} describe --tags `git -C ${{ env.git_repo_name }} rev-list --tags --max-count=1`)
+          commit=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
+          echo $t
+          echo $commit
+
+      # - name: calc tag
+      #   id: tag-job
+      #   run: |
+      #     t=$(git describe --tags `git rev-list --tags --max-count=1`)
+
+      #     # get current commit hash for tag
+      #     commit=$(git rev-parse HEAD)
+
+      #     # if there are none, start tags at 0.0.0
+      #     if [ -z "$t" ]
+      #     then
+      #         log=$(git log --pretty=oneline)
+      #         t=0.0.0
+      #     else
+      #         log=$(git log $t..HEAD --pretty=oneline)
+      #     fi
+
+      #     # get commit logs and determine home to bump the version
+      #     # supports #major, #minor, #patch (anything else will be 'minor')
+      #     case "$log" in
+      #         *#major* ) new=$(semver bump major $t);;
+      #         *#patch* ) new=$(semver bump patch $t);;
+      #         * ) new=$(semver bump minor $t);;
+      #     esac
+      #     echo log is: $log
+      #     echo t is: $t
+      #     echo commit is: $commit
+
+      # - name: Trigger service build
+      #   if: ${{ success() }}
+      #   run: | 
+      #     curl -H "Authorization: token ${{ secrets.GH_PAT }}"  \
+      #     -X POST \
+      #     -H "Accept: application/vnd.github.v3+json" \
+      #     https://api.github.com/repos/TalentFabric/position-service/dispatches \
+      #     -d '{"event_type": "build", "client_payload": {"ref": "refs/heads/master", "tag": "${TAG-latest}"}}'

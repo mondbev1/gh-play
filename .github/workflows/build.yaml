@@ -1,0 +1,88 @@
+name: Build Position Service
+
+on:
+  workflow_dispatch:
+    inputs:    
+      increaseVersion:
+        description: 'increase version - yes/no' 
+        default: "yes" 
+      deployTo:
+        description: 'deploy production - yes/no' 
+        default: "no"
+  # push:
+  #   branches: ['master', 'main']
+  repository_dispatch:
+    types:
+      - build
+
+jobs:
+  build:
+    if: ${{ ( github.event.action == 'build' ) }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set Repo Envs
+      run: |
+        REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
+        echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+        echo "docker_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+
+    - name: Checkout the repo
+      uses: actions/checkout@v2
+      with:
+        #repository: $GITHUB_REPOSITORY
+        path: ${{ env.git_repo_name }}
+        fetch-depth: 0
+
+    # - name: Install GitVersion
+    #   uses: gittools/actions/gitversion/setup@v0.9.9
+    #   with:
+    #     versionSpec: '5.6.7'
+
+    # - name: Determine Version
+    #   id: gitversion
+    #   uses: gittools/actions/gitversion/execute@v0.9.9
+    #   with:
+    #     targetPath: ${{ env.git_repo_name }}
+
+    # - name: set version
+    #   run: |
+    #     GITVERSION=${{ steps.gitversion.outputs.fullSemVer }}
+    #     echo "gitversion=${GITVERSION}" | tee -a $GITHUB_ENV
+
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: us-east-1
+
+    # - name: Login to Amazon ECR
+    #   id: login-ecr
+    #   uses: aws-actions/amazon-ecr-login@v1
+
+    # - name: docker build and push
+    #   env:
+    #     REGISTRY: 737852819915.dkr.ecr.us-east-1.amazonaws.com
+    #     PROJECT: talentfabric
+    #     REPO: ${{ env.docker_repo_name }}
+    #     TAG: ${{ env.gitversion }}
+    #     DOCKER_FILE: ${{ env.git_repo_name }}/Dockerfile
+    #     BUILD_CONTEXT: ${{ env.git_repo_name }}
+    #   run: |
+    #     IMAGE_NAME=${REGISTRY}/${PROJECT}/${REPO}:${TAG}
+    #     docker build --build-arg AWS_ACCESS_KEY_ID --build-arg AWS_SECRET_ACCESS_KEY -t $IMAGE_NAME -f ${DOCKER_FILE} ${BUILD_CONTEXT}
+    #     docker push $IMAGE_NAME
+
+    # - name: commit-tag-build
+    #   if: ${{ !env.ACT }}
+    #   env:
+    #     TAG: ${{ env.gitversion }}
+    #     DOCKER_REPO: ${{ env.docker_repo_name }}
+    #   run: |
+    #     git -C ${{ env.git_repo_name }} config user.name "GitHub Actions Bot"
+    #     git -C ${{ env.git_repo_name }} config user.email "<>"
+    #     git -C ${{ env.git_repo_name }} tag "${TAG}" || true
+    #     git -C ${{ env.git_repo_name }} push --tags || true
+
+        
