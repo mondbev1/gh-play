@@ -21,7 +21,7 @@ jobs:
           echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
           echo "node_version=14.x" | tee -a $GITHUB_ENV
           echo "mongodb_version=4.0" | tee -a $GITHUB_ENV
-          
+
       - uses: actions/checkout@v2
         with:
           #repository: $GITHUB_REPOSITORY
@@ -32,28 +32,51 @@ jobs:
       - name: prep
         id: prep
         run: |
-          git -C ${{ env.git_repo_name }} config user.name "GitHub Actions Bot"
-          git -C ${{ env.git_repo_name }} config user.email "<>"
-          t=$(git -C ${{ env.git_repo_name }} describe --tags `git -C ${{ env.git_repo_name }} rev-list --tags --max-count=1`)
+          TAG=$(git -C ${{ env.git_repo_name }} describe --tags `git -C ${{ env.git_repo_name }} rev-list --tags --max-count=1`)
+          echo ::set-output name=pre-tags::${TAG}
+      - name: My backup step
+        if: ${{ failure() }}
+        id: bu-prep
+        run: | 
+          TAG=0.0.0
+          echo ::set-output name=pre-tags::${TAG}
+
+      - name: Calc tags
+        if: ${{ always() }}
+        id: calc
+        run: | 
+          TAG=${{ steps.prep.outputs.pre-tags }}
+          if [[ -z ${TAG} ]]; then
+            log=$(git -C ${{ env.git_repo_name }} log --pretty=oneline)
+            TAG=${{ steps.bu-prep.outputs.pre-tags }}
+          else
+            log=$(git -C ${{ env.git_repo_name }} log $TAG..HEAD --pretty=oneline)
+          fi
+          case "$log" in
+              *#major* ) new=$(semver bump major $TAG);;
+              *#patch* ) new=$(semver bump patch $TAG);;
+              * ) new=$(semver bump minor $TAG);;
+          esac
           commit=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
-          echo $t
-          echo $commit
+          echo log is: $log
+          echo t is: $t
+          echo commit is: $commit
 
       # - name: calc tag
       #   id: tag-job
       #   run: |
-      #     t=$(git describe --tags `git rev-list --tags --max-count=1`)
+      #     t=$(git -C ${{ env.git_repo_name }} describe --tags `git rev-list --tags --max-count=1`)
 
       #     # get current commit hash for tag
-      #     commit=$(git rev-parse HEAD)
+      #     commit=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
 
       #     # if there are none, start tags at 0.0.0
       #     if [ -z "$t" ]
       #     then
-      #         log=$(git log --pretty=oneline)
+      #         log=$(git -C ${{ env.git_repo_name }} log --pretty=oneline)
       #         t=0.0.0
       #     else
-      #         log=$(git log $t..HEAD --pretty=oneline)
+      #         log=$(git -C ${{ env.git_repo_name }} log $t..HEAD --pretty=oneline)
       #     fi
 
       #     # get commit logs and determine home to bump the version
