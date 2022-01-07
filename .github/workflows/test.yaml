@@ -15,17 +15,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          #repository: $GITHUB_REPOSITORY
-          path: ${{ env.git_repo_name }}
-          fetch-depth: 0
       - name: Set Repo Envs
         run: |
           REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
           echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
           echo "node_version=14.x" | tee -a $GITHUB_ENV
           echo "mongodb_version=4.0" | tee -a $GITHUB_ENV
+          
+      - uses: actions/checkout@v2
+        with:
+          #repository: $GITHUB_REPOSITORY
+          path: ${{ env.git_repo_name }}
+          fetch-depth: 0
 
       # Prep the correct tag for push
       - name: prep
