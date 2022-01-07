@@ -64,7 +64,7 @@ jobs:
           esac
           commit=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
           echo log is: $log
-          echo t is: $t
+          echo t is: $TAG
           echo commit is: $commit
 
       # - name: calc tag
