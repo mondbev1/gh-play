@@ -25,12 +25,9 @@ jobs:
 
     - name: set version
       run: |
-        TAG=${{ github.event.client_payload.TAG }}
-        SHA=${{ github.event.client_payload.SHA }}
-        BAZ=${{ toJson(github.event.client_payload) }}
-        echo "TAG=${TAG}" | tee -a $GITHUB_ENV
-        echo "SHA=${SHA}" | tee -a $GITHUB_ENV
-        echo "${TAG}   ${SHA} and baz ${BAZ}"
+        'echo "tag: ${{ github.event.client_payload.CALC_TAG }}"'
+        'echo "sha: ${{ github.event.client_payload.CALC_SHA }}"'
+        'echo "payload: ${{ toJson(github.event.client_payload) }}"'
 
     # - name: commit-tag-build
     #   env:

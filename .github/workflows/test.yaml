@@ -38,11 +38,6 @@ jobs:
           TAG=0.0.0
           echo ::set-output name=pre-tags::${TAG}
 
-      - name: Use Node.js 14.x
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14.x'
-
       - name: Calc tags
         if: ${{ always() }}
         id: calc
@@ -56,17 +51,15 @@ jobs:
             log=$(git -C ${{ env.git_repo_name }} log $TAG..HEAD --pretty=oneline)
           fi
           case "$log" in
-              *#major* ) new=$(semver bump major $TAG);;
-              *#patch* ) new=$(semver bump patch $TAG);;
-              * ) new=$(semver bump minor $TAG);;
+              *#major* ) TAG=$(semver bump major $TAG);;
+              *#patch* ) TAG=$(semver bump patch $TAG);;
+              * ) TAG=$(semver bump minor $TAG);;
           esac
-          commit=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
-          echo log is: $log
+          CALC_SHA=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
           echo t is: $TAG
-          echo new is $new
-          echo commit is: $commit
-          echo ::set-output name=tags::${new}
-          echo ::set-output name=sha::${commit}
+          echo sha is: $CALC_SHA
+          echo ::set-output name=tags::${TAG}
+          echo ::set-output name=sha::${CALC_SHA}
 
       - name: test starts here
         if: ${{ always() }} && steps.calc.outcome == 'success'
@@ -77,10 +70,8 @@ jobs:
       - name: dispatch build
         if: ${{ always() }} && steps.test.outcome == 'success'
         run: |
-          TAG=${{ steps.calc.outputs.tags }}
-          SHA=${{ steps.calc.outputs.sha }}
-          curl -H "Authorization: token ${{ secrets.GH_TOKEN }}"   \
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}"   \
           -X POST \
           -H "Accept: application/vnd.github.v3+json" \
           https://api.github.com/repos/mondbev1/${{ env.git_repo_name }}/dispatches \
-          -d '{"event_type": "build", "client_payload": {"SHA": "${SHA}", "TAG": "${TAG}"}}'
+          -d '{"event_type": "build", "client_payload": {"CALC_SHA": "${{ steps.calc.outputs.sha }}", "CALC_TAG": "${{ steps.calc.outputs.tags }}"}}'
