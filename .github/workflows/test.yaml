@@ -69,12 +69,13 @@ jobs:
           echo ::set-output name=sha::${commit}
 
       - name: test starts here
-        if: ${{ success() }}
+        if: steps.calc.outcome == 'success'
+        id: test
         run: |
           echo started test
 
       - name: dispatch build
-        if: ${{ success() }}
+        if: steps.test.outcome == 'success'
         run: |
           TAG=${{ steps.calc.outputs.tags }}
           SHA=${{ steps.calc.outputs.sha }}
