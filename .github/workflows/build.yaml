@@ -6,12 +6,8 @@ on:
       release-tag:
         description: Release tag
         required: true
-      select-environment:
-        type: choice
-        description: Select the environment
-        options: 
-        - dev
-        - production
+      environment:
+        type: environment
   push:
     branches-ignore:
       - "**"
@@ -20,6 +16,7 @@ on:
 
 jobs:
   build:
+    environment: dev
     runs-on: ubuntu-latest
     steps:
     # - name: Set Repo Envs
@@ -35,18 +32,12 @@ jobs:
     #     path: ${{ env.git_repo_name }}
     #     fetch-depth: 0
 
-    - name: set version Prod
-      if: ${{ github.event.inputs.select-environment == 'production' }}
-      run: |
-        VERSION="${{ github.event.inputs.release-tag }}"
-        echo "${VERSION}"
-
-
     - name: set version Dev
-      if: ${{ github.event.inputs.select-environment == 'dev' }}
+      if: ${{ github.event.inputs.environment == 'production' }}
       run: |
         VERSION="${{ github.event.inputs.release-tag }}"
         echo "${VERSION}"
+
     # - name: commit-tag-build
     #   env:
     #     TAG: ${{ env.TAG }}
