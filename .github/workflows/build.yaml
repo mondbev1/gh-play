@@ -1,14 +1,22 @@
 name: Build Service
 
 on:
-  repository_dispatch:
-    types:
-      - build
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        description: Select the environment
+        default: "dev"
 
+  push:
+    branches: ['*']
+    tags-ignore:
+      - build-*
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    if: ${{ ( github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build') ) && !contains(github.event.head_commit.message, '#skip-build') }}
+    environment: dev
     steps:
     # - name: Set Repo Envs
     #   run: |
@@ -23,10 +31,15 @@ jobs:
     #     path: ${{ env.git_repo_name }}
     #     fetch-depth: 0
 
-    - name: set version
+    - name: set version Prod
+      if: ${{ ( contains(github.event.head_commit.message, '#build') && github.event.inputs.environment == 'production' ) }}
       run: |
-        'echo "payload: ${{ toJson(github.event.client_payload) }}"'
+        'echo "${{ github.event.head_commit.message }}"'
 
+    - name: set version Dev
+      if: ${{ ( contains(github.event.head_commit.message, '#build') && contains(github.event.head_commit.message, 'dev') ) }}
+      run: |
+        'echo "${{ github.event.head_commit.message }}"'
     # - name: commit-tag-build
     #   env:
     #     TAG: ${{ env.TAG }}
