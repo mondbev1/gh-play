@@ -8,8 +8,8 @@ on:
         description: Select the environment
         default: "dev"
       release-tag:
-          description: Release tag
-          required: true
+        description: Release tag
+        required: true
 
   push:
     branches: ['*']
