@@ -5,6 +5,7 @@ on:
     inputs:
       release-tag:
         description: Release tag
+        default: "yes"
       environment:
         type: environment
         description: Select the environment
