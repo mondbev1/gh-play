@@ -3,9 +3,6 @@ name: Build Service
 on:
   workflow_dispatch:
     inputs:
-      increaseVersion:
-        description: 'increase version - yes/no'
-        default: "yes"
       select-environment:
         type: choice
         description: Select the environment
@@ -15,9 +12,8 @@ on:
   push:
     branches-ignore:
       - "**"
-    tags:
+    tags-ignore:
       - "**"
-
 jobs:
   build:
     runs-on: ubuntu-latest
