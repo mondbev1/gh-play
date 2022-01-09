@@ -12,8 +12,8 @@ on:
       
 jobs:
   build:
+    if: ${{ (github.event.inputs.release-tag) }} 
     runs-on: ubuntu-latest
-
     steps:
     - name: Set Repo Envs
       run: |
@@ -27,7 +27,7 @@ jobs:
         #repository: $GITHUB_REPOSITORY
         path: ${{ env.git_repo_name }}
         # fetch-depth: 0
-        ref: '$GITHUB_REF'
+        ref: ${GITHUB_REF}
 
     - name: commit-tag-build
       run: |
