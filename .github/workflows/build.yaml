@@ -4,15 +4,16 @@ on:
     inputs:    
       release-tag:
         description: Release tag
-        #required: true
-  push:
-    #branches-ignore:
-    branches:
-      - "**"
+        required: true
+        default: "no"
+  # push:
+  #   #branches-ignore:
+  #   branches:
+  #     - "**"
       
 jobs:
   build:
-    if: ${{ (github.event.inputs.release-tag) }} 
+    if: ${{ !contains(github.event.inputs.release-tag, "no") }} 
     runs-on: ubuntu-latest
     steps:
     - name: Set Repo Envs
