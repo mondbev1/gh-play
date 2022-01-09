@@ -3,19 +3,18 @@ name: Build Service
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        type: environment
-        description: Select the environment
-        default: "dev"
       release-tag:
         description: Release tag
         required: true
-
+      environment:
+        type: environment
+        description: Select the environment
   push:
     branches-ignore:
       - "**"
     tags:
       - "**"
+
 jobs:
   build:
     runs-on: ubuntu-latest
