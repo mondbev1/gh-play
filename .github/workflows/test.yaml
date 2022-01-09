@@ -1,78 +1,76 @@
-# name: Service test
-# on:
-#   workflow_dispatch:
-#     inputs:    
-#       release-tag:
-#         description: Release tag
-#      #   required: true
-#   push:
-#     #branches-ignore:
-#     branches:
-#       - "master"
-#       - "main"
-#     tags:
-#       - "**"
-# jobs:
-#   test:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Set Repo Envs
-#         run: |
-#           REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
-#           echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+name: Service test
+on:
+  workflow_dispatch:
+    inputs:    
+      release-tag:
+        description: Release tag
+     #   required: true
+  push:
+    branches-ignore:
+      - "**"
+    tags:
+      - "**"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Repo Envs
+        run: |
+          REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
+          echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
 
-#       - uses: actions/checkout@v2
-#         with:
-#           #repository: $GITHUB_REPOSITORY
-#           path: ${{ env.git_repo_name }}
-#           fetch-depth: 0
+      - uses: actions/checkout@v2
+        with:
+          #repository: $GITHUB_REPOSITORY
+          path: ${{ env.git_repo_name }}
+          fetch-depth: 0
 
-#       - name: prep if tag
-#         id: prep
-#         run: |
-#           TAG=$(git -C ${{ env.git_repo_name }} describe --tags `git -C ${{ env.git_repo_name }} rev-list --tags --max-count=1`)
-#           echo ::set-output name=pre-tags::${TAG}
-#       - name: backup if no tag
-#         if: ${{ failure() }}
-#         id: bu-prep
-#         run: | 
-#           TAG=0.0.0
-#           echo ::set-output name=pre-tags::${TAG}
+      - name: prep if tag
+        id: prep
+        run: |
+          TAG=$(git -C ${{ env.git_repo_name }} describe --tags `git -C ${{ env.git_repo_name }} rev-list --tags --max-count=1`)
+          echo ::set-output name=pre-tags::${TAG}
+      - name: backup if no tag
+        if: ${{ failure() }}
+        id: bu-prep
+        run: | 
+          TAG=0.0.0
+          echo ::set-output name=pre-tags::${TAG}
 
-#       - name: Calc tags
-#         if: ${{ always() }}
-#         id: calc
-#         run: | 
-#           npm install -g semver
-#           TAG=${{ steps.prep.outputs.pre-tags }}
-#           if [[ -z ${TAG} ]]; then
-#             log=$(git -C ${{ env.git_repo_name }} log --pretty=oneline)
-#             TAG=${{ steps.bu-prep.outputs.pre-tags }}
-#           else
-#             log=$(git -C ${{ env.git_repo_name }} log $TAG..HEAD --pretty=oneline)
-#           fi
-#           case "$log" in
-#               *#major* ) TAG=$(semver bump major $TAG);;
-#               *#patch* ) TAG=$(semver bump patch $TAG);;
-#               * ) TAG=$(semver bump minor $TAG);;
-#           esac
-#           CALC_SHA=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
-#           echo t is: $TAG
-#           echo sha is: $CALC_SHA
-#           echo ::set-output name=tags::${TAG}
-#           echo ::set-output name=sha::${CALC_SHA}
+      - name: Calc tags
+        if: ${{ always() }}
+        id: calc
+        run: | 
+          npm install -g semver
+          TAG=${{ steps.prep.outputs.pre-tags }}
+          if [[ -z ${TAG} ]]; then
+            log=$(git -C ${{ env.git_repo_name }} log --pretty=oneline)
+            TAG=${{ steps.bu-prep.outputs.pre-tags }}
+          else
+            log=$(git -C ${{ env.git_repo_name }} log $TAG..HEAD --pretty=oneline)
+          fi
+          case "$log" in
+              *#major* ) TAG=$(semver bump major $TAG);;
+              *#patch* ) TAG=$(semver bump patch $TAG);;
+              * ) TAG=$(semver bump minor $TAG);;
+          esac
+          CALC_SHA=$(git -C ${{ env.git_repo_name }} rev-parse HEAD)
+          echo t is: $TAG
+          echo sha is: $CALC_SHA
+          echo ::set-output name=tags::${TAG}
+          echo ::set-output name=sha::${CALC_SHA}
 
-#       - name: test starts here
-#         if: ${{ always() }} && steps.calc.outcome == 'success'
-#         id: test
-#         run: |
-#           echo started test
+      - name: test starts here
+        if: ${{ always() }} && steps.calc.outcome == 'success'
+        id: test
+        run: |
+          echo started test
 
-#       - name: dispatch build
-#         if: ${{ always() }} && steps.test.outcome == 'success'
-#         run: |
-#           curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}"   \
-#           -X POST \
-#           -H "Accept: application/vnd.github.v3+json" \
-#           https://api.github.com/repos/mondbev1/${{ env.git_repo_name }}/dispatches \
-#           -d '{"event_type": "build", "client_payload": {"CALC_SHA": "${{ steps.calc.outputs.sha }}", "CALC_TAG": "${{ steps.calc.outputs.tags }}"}}'
+      - name: dispatch build
+        if: ${{ always() }} && steps.test.outcome == 'success'
+        run: |
+          curl -v -H "Authorization: token ${{ secrets.GH_TOKEN }}"   \
+          -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/mondbev1/${{ env.git_repo_name }}/dispatches \
+          -d '{"event_type": "build", "client_payload": {"CALC_SHA": "${{ steps.calc.outputs.sha }}", "CALC_TAG": "${{ steps.calc.outputs.tags }}"}}'
