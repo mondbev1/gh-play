@@ -5,7 +5,11 @@ on:
       release-tag:
         description: Release tag
         required: true
-
+  push:
+    #branches-ignore:
+    branches:
+      - "**"
+      
 jobs:
   build:
     runs-on: ubuntu-latest
