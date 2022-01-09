@@ -7,11 +7,7 @@ on:
         description: Release tag
         required: true
       environment:
-        type: choice
-        description: Select the environment
-        options: 
-        - dev
-        - production
+        type: environment
   push:
     branches-ignore:
       - "**"
@@ -20,6 +16,7 @@ on:
 
 jobs:
   build:
+    environment: production
     runs-on: ubuntu-latest
     steps:
     # - name: Set Repo Envs
@@ -37,18 +34,10 @@ jobs:
 
     - name: set version Prod
       if: ${{ github.event.inputs.environment == 'production' }}
-      environment: production
       run: |
         VERSION="${{ github.event.inputs.release-tag }}"
         echo "${VERSION}"
 
-
-    - name: set version Dev
-      if: ${{ github.event.inputs.environment == 'dev' }}
-      environment: dev
-      run: |
-        VERSION="${{ github.event.inputs.release-tag }}"
-        echo "${VERSION}"
     # - name: commit-tag-build
     #   env:
     #     TAG: ${{ env.TAG }}
