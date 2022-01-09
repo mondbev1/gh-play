@@ -5,8 +5,8 @@ on:
     inputs:
       release-tag:
         description: Release tag
-        default: "yes"
-      environment:
+        required: true
+      select-environment:
         type: choice
         description: Select the environment
         options: 
@@ -36,14 +36,14 @@ jobs:
     #     fetch-depth: 0
 
     - name: set version Prod
-      if: ${{ github.event.inputs.environment == 'production' }}
+      if: ${{ github.event.inputs.select-environment == 'production' }}
       run: |
         VERSION="${{ github.event.inputs.release-tag }}"
         echo "${VERSION}"
 
 
     - name: set version Dev
-      if: ${{ github.event.inputs.environment == 'dev' }}
+      if: ${{ github.event.inputs.select-environment == 'dev' }}
       run: |
         VERSION="${{ github.event.inputs.release-tag }}"
         echo "${VERSION}"
