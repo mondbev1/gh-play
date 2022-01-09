@@ -5,10 +5,13 @@ on:
     inputs:
       release-tag:
         description: Release tag
-        default: "yes"
+        required: true
       environment:
-        type: environment
+        type: choice
         description: Select the environment
+        options: 
+        - dev
+        - production
   push:
     branches-ignore:
       - "**"
