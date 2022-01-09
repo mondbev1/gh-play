@@ -5,7 +5,8 @@ on:
     inputs:
       release-tag:
         description: Release tag
-        required: true
+        # required: true
+        default: "yes"
       select-environment:
         type: choice
         description: Select the environment
