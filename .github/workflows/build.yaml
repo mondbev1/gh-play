@@ -37,6 +37,7 @@ jobs:
 
     - name: set version Prod
       if: ${{ github.event.inputs.environment == 'production' }}
+      environment: production
       run: |
         VERSION="${{ github.event.inputs.release-tag }}"
         echo "${VERSION}"
@@ -44,6 +45,7 @@ jobs:
 
     - name: set version Dev
       if: ${{ github.event.inputs.environment == 'dev' }}
+      environment: dev
       run: |
         VERSION="${{ github.event.inputs.release-tag }}"
         echo "${VERSION}"
