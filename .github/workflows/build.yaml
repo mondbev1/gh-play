@@ -12,13 +12,13 @@ on:
         required: true
 
   push:
-    branches: ['*']
-    tags-ignore:
-      - build-*
+    branches-ignore:
+      - "**"
+    tags:
+      - "**"
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ ( github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '#build') ) && !contains(github.event.head_commit.message, '#skip-build') }}
     environment: dev
     steps:
     # - name: Set Repo Envs
@@ -35,17 +35,17 @@ jobs:
     #     fetch-depth: 0
 
     - name: set version Prod
-      if: ${{ ( contains(github.event.head_commit.message, '#build') && github.event.inputs.environment == 'production' ) }}
+      if: ${{ github.event.inputs.environment == 'production' }}
       run: |
-        var="${{ github.event.head_commit.message }}"
-        echo "${var}"
+        VERSION="${{ github.event.inputs.release-tag }}"
+        echo "${VERSION}"
 
 
     - name: set version Dev
-      if: ${{ ( contains(github.event.head_commit.message, '#build') && contains(github.event.head_commit.message, 'dev') ) }}
+      if: ${{ github.event.inputs.environment == 'dev' }}
       run: |
-        var="${{ github.event.head_commit.message }}"
-        echo "${var}"
+        VERSION="${{ github.event.inputs.release-tag }}"
+        echo "${VERSION}"
     # - name: commit-tag-build
     #   env:
     #     TAG: ${{ env.TAG }}
