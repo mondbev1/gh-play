@@ -1,14 +1,26 @@
 name: Build Service
 
 on:
-  repository_dispatch:
-    types:
-      - build
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: Release tag
+        required: true
+      select-environment:
+        type: choice
+        description: Select the environment
+        options: 
+        - dev
+        - production
+  push:
+    branches-ignore:
+      - "**"
+    tags:
+      - "**"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     # - name: Set Repo Envs
     #   run: |
@@ -23,12 +35,18 @@ jobs:
     #     path: ${{ env.git_repo_name }}
     #     fetch-depth: 0
 
-    - name: set version
+    - name: set version Prod
+      if: ${{ github.event.inputs.select-environment == 'production' }}
       run: |
-        'echo "tag: ${{ github.event.client_payload.CALC_TAG }}"'
-        'echo "sha: ${{ github.event.client_payload.CALC_SHA }}"'
-        'echo "payload: ${{ toJson(github.event.client_payload) }}"'
+        VERSION="${{ github.event.inputs.release-tag }}"
+        echo "${VERSION}"
 
+
+    - name: set version Dev
+      if: ${{ github.event.inputs.select-environment == 'dev' }}
+      run: |
+        VERSION="${{ github.event.inputs.release-tag }}"
+        echo "${VERSION}"
     # - name: commit-tag-build
     #   env:
     #     TAG: ${{ env.TAG }}
