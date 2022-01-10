@@ -7,45 +7,86 @@ on:
         description: Release tag
         required: true
       environment:
-        type: environment
+        type: choice
+        description: Select the environment
+        options: 
+        - dev
+        - production
   push:
     branches-ignore:
       - "**"
-    tags:
+    tags-ignore:
       - "**"
 
 jobs:
   build:
-    environment: dev
     runs-on: ubuntu-latest
     steps:
-    # - name: Set Repo Envs
-    #   run: |
-    #     REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
-    #     echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
-    #     echo "docker_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+    - name: Set Repo Envs
+      run: |
+        REPO_NAME=$(echo $GITHUB_REPOSITORY | awk -F / '{print $2}')
+        echo "git_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+        echo "docker_repo_name=${REPO_NAME}" | tee -a $GITHUB_ENV
+        echo "REACT_APP_PREFIX_URL=/services/manuella-gateway/api" | tee -a $GITHUB_ENV
+        echo "REACT_APP_LOG_LEVEL=debug" | tee -a $GITHUB_ENV
 
-    # - name: Checkout the repo
-    #   uses: actions/checkout@v2
-    #   with:
-    #     #repository: $GITHUB_REPOSITORY
-    #     path: ${{ env.git_repo_name }}
-    #     fetch-depth: 0
+    - name: Checkout the repo
+      uses: actions/checkout@v2
+      with:
+        path: ${{ env.git_repo_name }}
+        fetch-depth: 0
 
-    - name: set version Dev
+    - name: set version Prod
       if: ${{ github.event.inputs.environment == 'production' }}
       run: |
-        VERSION="${{ github.event.inputs.release-tag }}"
-        echo "${VERSION}"
+        GITVERSION="${{ github.event.inputs.release-tag }}"
+        echo "gitversion=${GITVERSION}" | tee -a $GITHUB_ENV
+        echo "REACT_APP_GOOGLE_API_KEY=${{ secrets.PROD_REACT_APP_GOOGLE_API_KEY }}" | tee -a $GITHUB_ENV
 
-    # - name: commit-tag-build
-    #   env:
-    #     TAG: ${{ env.TAG }}
-    #     SHA: ${{ env.SHA }}
-    #   run: |
-    #     git -C ${{ env.git_repo_name }} config user.name "GitHub Actions Bot"
-    #     git -C ${{ env.git_repo_name }} config user.email "<>"
-    #     git -C ${{ env.git_repo_name }} tag "${TAG}" ${SHA} || true
-    #     git -C ${{ env.git_repo_name }} push --tags || true
 
-        
+    - name: set version Dev
+      if: ${{ github.event.inputs.environment == 'dev' }}
+      run: |
+        GITVERSION="${{ github.event.inputs.release-tag }}"
+        echo "gitversion=dev-${GITVERSION}" | tee -a $GITHUB_ENV
+        echo "REACT_APP_GOOGLE_API_KEY=${{ secrets.DEV_REACT_APP_GOOGLE_API_KEY }}" | tee -a $GITHUB_ENV
+
+    # - name: Configure AWS credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: us-east-1
+
+    # - name: Login to Amazon ECR
+    #   id: login-ecr
+    #   uses: aws-actions/amazon-ecr-login@v1
+
+    - name: docker build and push
+      env:
+        REGISTRY: 737852819915.dkr.ecr.us-east-1.amazonaws.com
+        PROJECT: talentfabric
+        REPO: ${{ env.docker_repo_name }}
+        TAG: ${{ env.gitversion }}
+        DOCKER_FILE: ${{ env.git_repo_name }}/Dockerfile
+        BUILD_CONTEXT: ${{ env.git_repo_name }}
+      run: |
+        IMAGE_NAME=${REGISTRY}/${PROJECT}/${REPO}:${TAG}
+        echo ${IMAGE_NAME}
+        # docker build \
+        #   -t $IMAGE_NAME \
+        #   -f ${DOCKER_FILE} ${BUILD_CONTEXT} \
+        #   --build-arg REACT_APP_LOG_LEVEL=${{ env.REACT_APP_LOG_LEVEL }} \
+        #   --build-arg REACT_APP_PREFIX_URL=${{ env.REACT_APP_PREFIX_URL }} \
+        #   --build-arg REACT_APP_GOOGLE_API_KEY=${{ env.REACT_APP_GOOGLE_API_KEY }}
+        # docker push $IMAGE_NAME
+
+    - name: commit-tag-build
+      env:
+        TAG: ${{ env.gitversion }}
+      run: |
+        git -C ${{ env.git_repo_name }} config user.name "GitHub Actions Bot"
+        git -C ${{ env.git_repo_name }} config user.email "<>"
+        git -C ${{ env.git_repo_name }} tag "${TAG}" || true
+        git -C ${{ env.git_repo_name }} push --tags || true
+
